@@ -41,4 +41,8 @@ export class RoomManager {
       }
     });
   }
+
+  public getUsers(spaceId: string): User[] {
+    return this.rooms.get(spaceId) || [];
+  }
 }

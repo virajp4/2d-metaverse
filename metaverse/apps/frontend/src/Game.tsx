@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from "react";
 const Arena = () => {
   const canvasRef = useRef<any>(null);
   const wsRef = useRef<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>({});
+  const [currentUser, setCurrentUser] = useState<{
+    x: number;
+    y: number;
+    userId: string;
+  } | null>(null);
   const [users, setUsers] = useState(new Map());
   const [params, setParams] = useState({ token: "", spaceId: "" });
 
@@ -45,37 +49,31 @@ const Arena = () => {
   const handleWebSocketMessage = (message: any) => {
     switch (message.type) {
       case "space-joined":
-        // Initialize current user position and other users
-        console.log("set");
-        console.log({
-          x: message.payload.spawn.x,
-          y: message.payload.spawn.y,
-          userId: message.payload.userId,
-        });
         setCurrentUser({
           x: message.payload.spawn.x,
           y: message.payload.spawn.y,
           userId: message.payload.userId,
         });
-
-        // Initialize other users from the payload
+        // Initialize other users with colors
         const userMap = new Map();
         message.payload.users.forEach((user: any) => {
-          userMap.set(user.userId, user);
+          userMap.set(user.userId, {
+            ...user,
+            color: user.color,
+          });
         });
         setUsers(userMap);
         break;
 
       case "user-joined":
-        setUsers((prev) => {
-          const newUsers = new Map(prev);
-          newUsers.set(message.payload.userId, {
+        setUsers((prev) =>
+          new Map(prev).set(message.payload.userId, {
             x: message.payload.x,
             y: message.payload.y,
             userId: message.payload.userId,
-          });
-          return newUsers;
-        });
+            color: message.payload.color,
+          })
+        );
         break;
 
       case "movement":
@@ -83,9 +81,11 @@ const Arena = () => {
           const newUsers = new Map(prev);
           const user = newUsers.get(message.payload.userId);
           if (user) {
-            user.x = message.payload.x;
-            user.y = message.payload.y;
-            newUsers.set(message.payload.userId, user);
+            newUsers.set(message.payload.userId, {
+              ...user,
+              x: message.payload.x,
+              y: message.payload.y,
+            });
           }
           return newUsers;
         });
@@ -111,8 +111,11 @@ const Arena = () => {
   };
 
   // Handle user movement
-  const handleMove = (newX: any, newY: any) => {
+  const handleMove = (newX: number, newY: number) => {
     if (!currentUser) return;
+
+    // Update local state immediately
+    setCurrentUser((prev) => (prev ? { ...prev, x: newX, y: newY } : null));
 
     // Send movement request
     wsRef.current.send(
@@ -154,36 +157,20 @@ const Arena = () => {
 
     console.log("before curerntusert");
     console.log(JSON.stringify(currentUser));
-    // Draw current user
-    if (currentUser && currentUser.x) {
-      console.log("drawing myself");
-      console.log(JSON.stringify(currentUser));
-      ctx.beginPath();
-      ctx.fillStyle = "#FF6B6B";
-      ctx.arc(currentUser.x * 50, currentUser.y * 50, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#000";
-      ctx.font = "14px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("You", currentUser.x * 50, currentUser.y * 50 + 40);
-    }
-
     // Draw other users
     users.forEach((user) => {
-      if (!user.x) {
-        return;
-      }
-      console.log("drawing other user");
-      console.log(user);
       ctx.beginPath();
-      ctx.fillStyle = "#4ECDC4";
+      ctx.fillStyle = user.color;
       ctx.arc(user.x * 50, user.y * 50, 20, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#000";
-      ctx.font = "14px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(`User ${user.userId}`, user.x * 50, user.y * 50 + 40);
     });
+
+    // Draw current user
+    if (currentUser) {
+      ctx.beginPath();
+      ctx.arc(currentUser.x * 50, currentUser.y * 50, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }, [currentUser, users]);
 
   const handleKeyDown = (e: any) => {

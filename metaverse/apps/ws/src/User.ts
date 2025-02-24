@@ -1,147 +1,145 @@
 import { WebSocket } from "ws";
 import { RoomManager } from "./RoomManager";
-import { OutgoingMessage } from "./types";
+import { IncomingMessage, OutgoingMessage, Position, UserInfo } from "./types";
 import client from "@repo/db/client";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { JWT_PASSWORD } from "./config";
+import { config } from "./config";
 
-function getRandomString(length: number) {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
+const generateId = (length: number) =>
+  [...Array(length)].map(() => Math.random().toString(36)[2]).join("");
 
 export class User {
   public id: string;
   public userId?: string;
   private spaceId?: string;
-  private x: number;
-  private y: number;
+  private position: Position;
   private ws: WebSocket;
 
   constructor(ws: WebSocket) {
-    this.id = getRandomString(10);
-    this.x = 0;
-    this.y = 0;
+    this.id = generateId(10);
+    this.position = { x: 0, y: 0 };
     this.ws = ws;
     this.initHandlers();
   }
 
-  initHandlers() {
-    this.ws.on("message", async (data) => {
-      console.log(data);
-      const parsedData = JSON.parse(data.toString());
-      console.log(parsedData);
-      console.log("parsedData");
-      switch (parsedData.type) {
-        case "join":
-          console.log("jouin receiverdfd");
-          const spaceId = parsedData.payload.spaceId;
-          const token = parsedData.payload.token;
-          const userId = (jwt.verify(token, JWT_PASSWORD) as JwtPayload).userId;
-          if (!userId) {
-            this.ws.close();
-            return;
-          }
-          console.log("jouin receiverdfd 2");
-          this.userId = userId;
-          const space = await client.space.findFirst({
-            where: {
-              id: spaceId,
-            },
-          });
-          console.log("jouin receiverdfd 3");
-          if (!space) {
-            this.ws.close();
-            return;
-          }
-          console.log("jouin receiverdfd 4");
-          this.spaceId = spaceId;
-          RoomManager.getInstance().addUser(spaceId, this);
-          this.x = Math.floor(Math.random() * space?.width);
-          this.y = Math.floor(Math.random() * space?.height);
-          this.send({
-            type: "space-joined",
-            payload: {
-              spawn: {
-                x: this.x,
-                y: this.y,
-              },
-              users:
-                RoomManager.getInstance()
-                  .rooms.get(spaceId)
-                  ?.filter((x) => x.id !== this.id)
-                  ?.map((u) => ({ id: u.id })) ?? [],
-            },
-          });
-          console.log("jouin receiverdf5");
-          RoomManager.getInstance().broadcast(
-            {
-              type: "user-joined",
-              payload: {
-                userId: this.userId,
-                x: this.x,
-                y: this.y,
-              },
-            },
-            this,
-            this.spaceId!
-          );
-          break;
-        case "move":
-          const moveX = parsedData.payload.x;
-          const moveY = parsedData.payload.y;
-          const xDisplacement = Math.abs(this.x - moveX);
-          const yDisplacement = Math.abs(this.y - moveY);
-          if (
-            (xDisplacement == 1 && yDisplacement == 0) ||
-            (xDisplacement == 0 && yDisplacement == 1)
-          ) {
-            this.x = moveX;
-            this.y = moveY;
-            RoomManager.getInstance().broadcast(
-              {
-                type: "movement",
-                payload: {
-                  x: this.x,
-                  y: this.y,
-                },
-              },
-              this,
-              this.spaceId!
-            );
-            return;
-          }
+  private async handleJoin(spaceId: string, token: string) {
+    try {
+      const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
+      if (!decoded.userId) return false;
 
-          this.send({
-            type: "movement-rejected",
-            payload: {
-              x: this.x,
-              y: this.y,
-            },
-          });
+      this.userId = decoded.userId;
+      const space = await client.space.findFirst({ where: { id: spaceId } });
+      if (!space) return false;
+
+      this.spaceId = spaceId;
+
+      this.position = {
+        x: Math.floor(Math.random() * 15),
+        y: Math.floor(Math.random() * 15),
+      };
+
+      const existingUsers = RoomManager.getInstance()
+        .getUsers(spaceId)
+        .map((user) => ({
+          userId: user.userId!,
+          x: user.getPosition().x,
+          y: user.getPosition().y,
+        }));
+
+      RoomManager.getInstance().addUser(spaceId, this);
+
+      this.send({
+        type: "space-joined",
+        payload: {
+          userId: this.userId,
+          spawn: this.position,
+          users: existingUsers,
+        },
+      });
+
+      this.broadcastToRoom({
+        type: "user-joined",
+        payload: {
+          userId: this.userId,
+          x: this.position.x,
+          y: this.position.y,
+        },
+      });
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private handleMove(x: number, y: number) {
+    const xDiff = Math.abs(this.position.x - x);
+    const yDiff = Math.abs(this.position.y - y);
+
+    if ((xDiff === 1 && yDiff === 0) || (xDiff === 0 && yDiff === 1)) {
+      this.position = { x, y };
+      this.broadcastToRoom({
+        type: "movement",
+        payload: {
+          userId: this.userId!,
+          x: this.position.x,
+          y: this.position.y,
+        },
+      });
+      return;
+    }
+
+    this.send({
+      type: "movement-rejected",
+      payload: {
+        x: this.position.x,
+        y: this.position.y,
+      },
+    });
+  }
+
+  private initHandlers() {
+    this.ws.on("message", async (data) => {
+      try {
+        const message = JSON.parse(data.toString()) as IncomingMessage;
+
+        switch (message.type) {
+          case "join":
+            const success = await this.handleJoin(message.payload.spaceId!, message.payload.token!);
+            if (!success) this.ws.close();
+            break;
+
+          case "move":
+            this.handleMove(message.payload.x!, message.payload.y!);
+            break;
+        }
+      } catch (e) {
+        this.ws.close();
       }
     });
   }
 
-  destroy() {
-    RoomManager.getInstance().broadcast(
-      {
-        type: "user-left",
-        payload: {
-          userId: this.userId,
-        },
-      },
-      this,
-      this.spaceId!
-    );
-    RoomManager.getInstance().removeUser(this, this.spaceId!);
+  private broadcastToRoom(message: OutgoingMessage) {
+    if (this.spaceId) {
+      RoomManager.getInstance().broadcast(message, this, this.spaceId);
+    }
   }
 
-  send(payload: OutgoingMessage) {
+  public destroy() {
+    if (this.spaceId && this.userId) {
+      this.broadcastToRoom({
+        type: "user-left",
+        payload: { userId: this.userId },
+      });
+      RoomManager.getInstance().removeUser(this, this.spaceId);
+    }
+  }
+
+  public send(payload: OutgoingMessage) {
     this.ws.send(JSON.stringify(payload));
+  }
+
+  public getPosition(): Position {
+    return this.position;
   }
 }
