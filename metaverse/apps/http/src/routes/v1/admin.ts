@@ -73,8 +73,8 @@ adminRouter.post("/map", async (req, res) => {
   const map = await client.map.create({
     data: {
       name: parsedData.data.name,
-      width: parseInt(parsedData.data.dimensions.split("x")[0]),
-      height: parseInt(parsedData.data.dimensions.split("x")[1]),
+      width: 15,
+      height: 15,
       thumbnail: parsedData.data.thumbnail,
       mapElements: {
         create: parsedData.data.defaultElements.map((e) => ({
