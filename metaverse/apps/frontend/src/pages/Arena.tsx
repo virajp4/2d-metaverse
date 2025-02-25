@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../store/auth";
 import { useNavigate, useParams } from "react-router-dom";
+import { SpaceUser } from "@repo/types";
 
 const WS_URL = import.meta.env.VITE_WS_URL;
 
@@ -8,10 +9,8 @@ export default function Arena() {
   const { spaceId } = useParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [users, setUsers] = useState<Map<string, { x: number; y: number; userId: string }>>(
-    new Map()
-  );
+  const [currentUser, setCurrentUser] = useState<SpaceUser | null>(null);
+  const [users, setUsers] = useState<Map<string, SpaceUser>>(new Map());
   const [connected, setConnected] = useState(false);
   const { token } = useAuthStore();
   const navigate = useNavigate();

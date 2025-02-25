@@ -2,14 +2,18 @@
   "compilerOptions": {
     "target": "es2016",
     /* Modules */
-    "rootDir": "./src",                                  /* Specify the root folder within your source files. */
+    "rootDir": "../..",
     "module": "NodeNext",
     "moduleDetection": "force",
-    "moduleResolution": "NodeNext",                    
-    "outDir": "./dist",                                  
-    "esModuleInterop": true,                             
-    "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
-    "strict": true,                                      /* Enable all strict type-checking options. */
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/types": ["../../packages/types/src"]
+    }
   }
 }
