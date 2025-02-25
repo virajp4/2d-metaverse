@@ -68,3 +68,12 @@ export interface UserLeftMessage extends WebSocketMessage {
     userId: string;
   };
 }
+
+export type OutgoingMessage =
+  | SpaceJoinedMessage
+  | UserJoinedMessage
+  | MovementMessage
+  | UserLeftMessage
+  | MovementRejectedMessage;
+
+export type IncomingMessage = JoinMessage | MoveMessage;

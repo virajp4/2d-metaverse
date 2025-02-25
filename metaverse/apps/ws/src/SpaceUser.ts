@@ -1,6 +1,14 @@
 import { WebSocket } from "ws";
-import { RoomManager } from "./RoomManager";
-import { IncomingMessage, OutgoingMessage, Position, UserInfo } from "./types";
+import { SpaceManager } from "./SpaceManager";
+import {
+  Coordinate,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  IncomingMessage,
+  OutgoingMessage,
+  MessageType,
+  CELL_SIZE,
+} from "@repo/types";
 import client from "@repo/db/client";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { config } from "./config";
@@ -8,11 +16,11 @@ import { config } from "./config";
 const generateId = (length: number) =>
   [...Array(length)].map(() => Math.random().toString(36)[2]).join("");
 
-export class User {
+export class SpaceUser {
   public id: string;
   public userId?: string;
   private spaceId?: string;
-  private position: Position;
+  private position: Coordinate;
   private ws: WebSocket;
 
   constructor(ws: WebSocket) {
@@ -34,33 +42,33 @@ export class User {
       this.spaceId = spaceId;
 
       this.position = {
-        x: Math.floor(Math.random() * 15),
-        y: Math.floor(Math.random() * 15),
+        x: Math.floor((Math.random() * CANVAS_WIDTH) / CELL_SIZE),
+        y: Math.floor((Math.random() * CANVAS_HEIGHT) / CELL_SIZE),
       };
 
-      const existingUsers = RoomManager.getInstance()
+      const existingUsers = SpaceManager.getInstance()
         .getUsers(spaceId)
-        .map((user) => ({
+        .map((user: SpaceUser) => ({
           userId: user.userId!,
           x: user.getPosition().x,
           y: user.getPosition().y,
         }));
 
-      RoomManager.getInstance().addUser(spaceId, this);
+      SpaceManager.getInstance().addUser(spaceId, this);
 
       this.send({
-        type: "space-joined",
+        type: MessageType.SPACE_JOINED,
         payload: {
-          userId: this.userId,
+          userId: this.userId!,
           spawn: this.position,
           users: existingUsers,
         },
       });
 
       this.broadcastToRoom({
-        type: "user-joined",
+        type: MessageType.USER_JOINED,
         payload: {
-          userId: this.userId,
+          userId: this.userId!,
           x: this.position.x,
           y: this.position.y,
         },
@@ -79,7 +87,7 @@ export class User {
     if ((xDiff === 1 && yDiff === 0) || (xDiff === 0 && yDiff === 1)) {
       this.position = { x, y };
       this.broadcastToRoom({
-        type: "movement",
+        type: MessageType.MOVEMENT,
         payload: {
           userId: this.userId!,
           x: this.position.x,
@@ -90,7 +98,7 @@ export class User {
     }
 
     this.send({
-      type: "movement-rejected",
+      type: MessageType.MOVEMENT_REJECTED,
       payload: {
         x: this.position.x,
         y: this.position.y,
@@ -121,17 +129,17 @@ export class User {
 
   private broadcastToRoom(message: OutgoingMessage) {
     if (this.spaceId) {
-      RoomManager.getInstance().broadcast(message, this, this.spaceId);
+      SpaceManager.getInstance().broadcast(message, this, this.spaceId);
     }
   }
 
   public destroy() {
     if (this.spaceId && this.userId) {
       this.broadcastToRoom({
-        type: "user-left",
+        type: MessageType.USER_LEFT,
         payload: { userId: this.userId },
       });
-      RoomManager.getInstance().removeUser(this, this.spaceId);
+      SpaceManager.getInstance().removeUser(this, this.spaceId);
     }
   }
 
@@ -139,7 +147,7 @@ export class User {
     this.ws.send(JSON.stringify(payload));
   }
 
-  public getPosition(): Position {
+  public getPosition(): Coordinate {
     return this.position;
   }
 }

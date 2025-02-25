@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import GameCanvas from "../components/game/GameCanvas";
 import useGameWebSocket from "../hooks/useGameWebSocket";
 import useGameControls from "../hooks/useGameControls";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CELL_SIZE } from "@repo/types";
 
 export default function Arena() {
   const { spaceId } = useParams();
@@ -19,24 +20,34 @@ export default function Arena() {
   useGameControls({
     currentUser,
     handleMove,
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+    cellSize: CELL_SIZE,
   });
 
   return (
-    <div className="p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Space: {spaceId}</h1>
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />
-            <span className="text-sm text-gray-600">
-              {connected ? "Connected" : "Disconnected"}
-            </span>
-          </div>
+    <div className="flex flex-col items-center w-full">
+      <div className="flex justify-between items-center mb-4 w-full max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold">Space: {spaceId}</h1>
+        <div className="flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />
+          <span className="text-sm text-gray-600">
+            {connected ? "Connected" : "Disconnected"} ({users.size} users)
+          </span>
         </div>
-        <GameCanvas currentUser={currentUser} users={users} width={750} height={750} />
-        <p className="mt-2 text-sm text-gray-500">
-          Use arrow keys to move your avatar (red circle)
-        </p>
+      </div>
+      <GameCanvas
+        currentUser={currentUser}
+        users={users}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        cellSize={CELL_SIZE}
+      />
+      <div className="flex items-start p-2">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-red-500"></div>
+          <span className="text-sm text-gray-600">Use arrow keys to move your avatar</span>
+        </div>
       </div>
     </div>
   );

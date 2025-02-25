@@ -65,8 +65,8 @@ export const CreateMapSchema = z.object({
   defaultElements: z.array(
     z.object({
       elementId: z.string(),
-      x: z.number().min(0).max(14),
-      y: z.number().min(0).max(14),
+      x: z.number(),
+      y: z.number(),
     })
   ),
 }) satisfies z.ZodType<CreateMapRequest>;

@@ -4,12 +4,23 @@ import { SpaceUser } from "@repo/types";
 interface UseGameControlsProps {
   currentUser: SpaceUser | null;
   handleMove: (x: number, y: number) => void;
+  width: number;
+  height: number;
+  cellSize: number;
 }
 
-export default function useGameControls({ currentUser, handleMove }: UseGameControlsProps) {
+export default function useGameControls({
+  currentUser,
+  handleMove,
+  width,
+  height,
+  cellSize,
+}: UseGameControlsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentUser) return;
+      const yCellBound = height / cellSize;
+      const xCellBound = width / cellSize;
 
       const { x, y } = currentUser;
       switch (e.key) {
@@ -17,13 +28,13 @@ export default function useGameControls({ currentUser, handleMove }: UseGameCont
           if (y > 0) handleMove(x, y - 1);
           break;
         case "ArrowDown":
-          if (y < 14) handleMove(x, y + 1);
+          if (y < yCellBound - 1) handleMove(x, y + 1);
           break;
         case "ArrowLeft":
           if (x > 0) handleMove(x - 1, y);
           break;
         case "ArrowRight":
-          if (x < 14) handleMove(x + 1, y);
+          if (x < xCellBound - 1) handleMove(x + 1, y);
           break;
       }
     };

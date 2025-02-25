@@ -8,7 +8,9 @@ import {
   UpdateElementSchema,
 } from "../../types";
 import client from "@repo/db/client";
+
 export const adminRouter = Router();
+
 adminRouter.use(adminMiddleware);
 
 adminRouter.post("/element", async (req, res) => {

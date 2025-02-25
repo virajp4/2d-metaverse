@@ -2,6 +2,8 @@ import { Router } from "express";
 import client from "@repo/db/client";
 import { userMiddleware } from "../../middleware/user";
 import { AddElementSchema, CreateSpaceSchema, DeleteElementSchema } from "../../types";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CELL_SIZE } from "@repo/types";
+
 export const spaceRouter = Router();
 
 spaceRouter.post("/", userMiddleware, async (req, res) => {
@@ -14,8 +16,8 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
     const space = await client.space.create({
       data: {
         name: parsedData.data.name,
-        width: 15,
-        height: 15,
+        width: CANVAS_WIDTH / CELL_SIZE,
+        height: CANVAS_HEIGHT / CELL_SIZE,
         creatorId: req.userId!,
       },
     });
@@ -36,8 +38,8 @@ spaceRouter.post("/", userMiddleware, async (req, res) => {
     const space = await client.space.create({
       data: {
         name: parsedData.data.name,
-        width: 15,
-        height: 15,
+        width: CANVAS_WIDTH / CELL_SIZE,
+        height: CANVAS_HEIGHT / CELL_SIZE,
         creatorId: req.userId!,
       },
     });

@@ -6,9 +6,16 @@ interface GameCanvasProps {
   users: Map<string, SpaceUser>;
   width: number;
   height: number;
+  cellSize: number;
 }
 
-export default function GameCanvas({ currentUser, users, width, height }: GameCanvasProps) {
+export default function GameCanvas({
+  currentUser,
+  users,
+  width,
+  height,
+  cellSize,
+}: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -29,7 +36,7 @@ export default function GameCanvas({ currentUser, users, width, height }: GameCa
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw grid
-      drawGrid(ctx);
+      drawGrid(ctx, canvas.width, canvas.height);
 
       // Draw other users in green
       drawOtherUsers(ctx, currentState.users);
@@ -41,11 +48,14 @@ export default function GameCanvas({ currentUser, users, width, height }: GameCa
     return () => cancelAnimationFrame(animationFrame);
   }, [currentUser, users]);
 
-  function drawGrid(ctx: CanvasRenderingContext2D) {
+  function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    const cols = Math.floor(width / cellSize);
+    const rows = Math.floor(height / cellSize);
+
     ctx.strokeStyle = "#eee";
-    for (let i = 0; i < 15; i++) {
-      for (let j = 0; j < 15; j++) {
-        ctx.strokeRect(i * 50, j * 50, 50, 50);
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        ctx.strokeRect(i * cellSize, j * cellSize, cellSize, cellSize);
       }
     }
   }
@@ -54,7 +64,13 @@ export default function GameCanvas({ currentUser, users, width, height }: GameCa
     users.forEach((user) => {
       ctx.fillStyle = "#4CAF50"; // Green color for other users
       ctx.beginPath();
-      ctx.arc(user.x * 50 + 25, user.y * 50 + 25, 20, 0, Math.PI * 2);
+      ctx.arc(
+        user.x * cellSize + cellSize / 2,
+        user.y * cellSize + cellSize / 2,
+        cellSize / 2.5,
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
     });
   }
@@ -62,7 +78,13 @@ export default function GameCanvas({ currentUser, users, width, height }: GameCa
   function drawCurrentUser(ctx: CanvasRenderingContext2D, user: SpaceUser) {
     ctx.fillStyle = "#FF0000"; // Red color for current user
     ctx.beginPath();
-    ctx.arc(user.x * 50 + 25, user.y * 50 + 25, 20, 0, Math.PI * 2);
+    ctx.arc(
+      user.x * cellSize + cellSize / 2,
+      user.y * cellSize + cellSize / 2,
+      cellSize / 2.5,
+      0,
+      Math.PI * 2
+    );
     ctx.fill();
   }
 
