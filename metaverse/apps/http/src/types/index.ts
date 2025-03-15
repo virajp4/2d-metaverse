@@ -15,7 +15,7 @@ import {
 export const SignupSchema = z.object({
   username: z.string(),
   password: z.string(),
-  type: z.enum(["user", "admin"]),
+  type: z.enum(["student", "teacher", "staff", "admin"]),
 }) satisfies z.ZodType<SignUpRequest>;
 
 export const SigninSchema = z.object({
@@ -74,7 +74,7 @@ export const CreateMapSchema = z.object({
 declare global {
   namespace Express {
     export interface Request {
-      role?: "Admin" | "User";
+      role?: "Admin" | "Student" | "Teacher" | "Staff";
       userId?: string;
     }
   }

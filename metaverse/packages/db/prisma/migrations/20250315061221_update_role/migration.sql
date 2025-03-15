@@ -1,12 +1,12 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('Admin', 'User');
+CREATE TYPE "Role" AS ENUM ('Admin', 'Student', 'Teacher', 'Staff');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "avatarId" TEXT NOT NULL,
+    "avatarId" TEXT,
     "role" "Role" NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -17,7 +17,7 @@ CREATE TABLE "Space" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "width" INTEGER NOT NULL,
-    "height" INTEGER,
+    "height" INTEGER NOT NULL,
     "thumbnail" TEXT,
     "creatorId" TEXT NOT NULL,
 
@@ -40,6 +40,7 @@ CREATE TABLE "Element" (
     "id" TEXT NOT NULL,
     "width" INTEGER NOT NULL,
     "height" INTEGER NOT NULL,
+    "static" BOOLEAN NOT NULL,
     "imageUrl" TEXT NOT NULL,
 
     CONSTRAINT "Element_pkey" PRIMARY KEY ("id")
@@ -51,6 +52,7 @@ CREATE TABLE "Map" (
     "width" INTEGER NOT NULL,
     "height" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
+    "thumbnail" TEXT NOT NULL,
 
     CONSTRAINT "Map_pkey" PRIMARY KEY ("id")
 );
@@ -82,9 +84,6 @@ CREATE UNIQUE INDEX "User_id_key" ON "User"("id");
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_password_key" ON "User"("password");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Space_id_key" ON "Space"("id");
 
 -- CreateIndex
@@ -103,7 +102,7 @@ CREATE UNIQUE INDEX "MapElements_id_key" ON "MapElements"("id");
 CREATE UNIQUE INDEX "Avatar_id_key" ON "Avatar"("id");
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_avatarId_fkey" FOREIGN KEY ("avatarId") REFERENCES "Avatar"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_avatarId_fkey" FOREIGN KEY ("avatarId") REFERENCES "Avatar"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Space" ADD CONSTRAINT "Space_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

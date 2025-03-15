@@ -1,7 +1,9 @@
+export type Role = "Student" | "Teacher" | "Staff" | "Admin";
+
 export interface User {
   userId: string;
   username: string;
-  type: "user" | "admin";
+  type: "student" | "teacher" | "staff" | "admin";
 }
 
 export interface AuthResponse {
@@ -17,5 +19,5 @@ export interface SignInRequest {
 export interface SignUpRequest {
   username: string;
   password: string;
-  type: "user" | "admin";
+  type: "student" | "teacher" | "staff" | "admin";
 }

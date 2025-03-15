@@ -82,5 +82,7 @@ model Avatar {
 
 enum Role {
   Admin
-  User
+  Student
+  Teacher
+  Staff
 }

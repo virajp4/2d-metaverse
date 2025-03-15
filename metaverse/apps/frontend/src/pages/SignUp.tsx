@@ -9,6 +9,7 @@ export default function SignUp() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("student");
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { setToken } = useAuthStore();
@@ -27,7 +28,7 @@ export default function SignUp() {
       await axios.post(`${API_URL}/signup`, {
         username,
         password,
-        type: "user",
+        type: role,
       });
 
       // Then sign in to get the token
@@ -71,7 +72,7 @@ export default function SignUp() {
               minLength={6}
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-4">
             <input
               type="password"
               placeholder="Confirm Password"
@@ -80,6 +81,18 @@ export default function SignUp() {
               className="w-full p-2 border rounded"
               required
             />
+          </div>
+          <div className="mb-6">
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full p-2 border rounded"
+              required
+            >
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+              <option value="staff">Staff</option>
+            </select>
           </div>
           <button
             type="submit"
