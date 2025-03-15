@@ -8,4 +8,4 @@ export * from "./map";
 
 export const CANVAS_WIDTH = 1080;
 export const CANVAS_HEIGHT = 720;
-export const CELL_SIZE = 40;
+export const CELL_SIZE = 72;

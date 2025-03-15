@@ -13,4 +13,5 @@ export interface SpaceUser {
   userId: string;
   x: number;
   y: number;
+  role: string;
 }

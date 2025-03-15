@@ -22,12 +22,14 @@ export class SpaceUser {
   private spaceId?: string;
   private position: Coordinate;
   private ws: WebSocket;
+  private role: string;
 
   constructor(ws: WebSocket) {
     this.id = generateId(10);
     this.position = { x: 0, y: 0 };
     this.ws = ws;
     this.initHandlers();
+    this.role = "student";
   }
 
   private async handleJoin(spaceId: string, token: string) {
@@ -39,11 +41,24 @@ export class SpaceUser {
       const space = await client.space.findFirst({ where: { id: spaceId } });
       if (!space) return false;
 
+      // Fetch user to get role
+      const user = await client.user.findUnique({
+        where: { id: decoded.userId },
+        select: { role: true },
+      });
+
+      // Set role appropriately - lowercase for consistent comparison
+      if (user && user.role) {
+        this.role = user.role.toLowerCase();
+      } else {
+        this.role = "student"; // Default role should be lowercase for client comparison
+      }
+
       this.spaceId = spaceId;
 
       this.position = {
-        x: Math.floor((Math.random() * CANVAS_WIDTH) / CELL_SIZE),
-        y: Math.floor((Math.random() * CANVAS_HEIGHT) / CELL_SIZE),
+        x: Math.floor(Math.random() * (CANVAS_WIDTH / CELL_SIZE)),
+        y: Math.floor(Math.random() * (CANVAS_HEIGHT / CELL_SIZE)),
       };
 
       const existingUsers = SpaceManager.getInstance()
@@ -52,6 +67,7 @@ export class SpaceUser {
           userId: user.userId!,
           x: user.getPosition().x,
           y: user.getPosition().y,
+          role: user.role,
         }));
 
       SpaceManager.getInstance().addUser(spaceId, this);
@@ -62,6 +78,7 @@ export class SpaceUser {
           userId: this.userId!,
           spawn: this.position,
           users: existingUsers,
+          role: this.role,
         },
       });
 
@@ -71,6 +88,7 @@ export class SpaceUser {
           userId: this.userId!,
           x: this.position.x,
           y: this.position.y,
+          role: this.role,
         },
       });
 
@@ -92,6 +110,7 @@ export class SpaceUser {
           userId: this.userId!,
           x: this.position.x,
           y: this.position.y,
+          role: this.role,
         },
       });
       return;

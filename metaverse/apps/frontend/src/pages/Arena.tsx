@@ -23,6 +23,8 @@ export default function Arena() {
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
     cellSize: CELL_SIZE,
+    users,
+    isConnected: connected,
   });
 
   return (

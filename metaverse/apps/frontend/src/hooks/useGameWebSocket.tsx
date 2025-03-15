@@ -66,6 +66,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
           x: message.payload.spawn.x,
           y: message.payload.spawn.y,
           userId: message.payload.userId,
+          role: message.payload.role,
         });
 
         const initialUsers = new Map();
@@ -75,6 +76,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
               x: user.x,
               y: user.y,
               userId: user.userId,
+              role: user.role,
             });
           }
         });
@@ -89,6 +91,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
               x: message.payload.x,
               y: message.payload.y,
               userId: message.payload.userId,
+              role: message.payload.role,
             });
           }
           return newUsers;
@@ -105,11 +108,14 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
         } else {
           setUsers((prev) => {
             const newUsers = new Map(prev);
-            newUsers.set(message.payload.userId, {
-              x: message.payload.x,
-              y: message.payload.y,
-              userId: message.payload.userId,
-            });
+            const existingUser = prev.get(message.payload.userId);
+            if (existingUser) {
+              newUsers.set(message.payload.userId, {
+                ...existingUser,
+                x: message.payload.x,
+                y: message.payload.y,
+              });
+            }
             return newUsers;
           });
         }

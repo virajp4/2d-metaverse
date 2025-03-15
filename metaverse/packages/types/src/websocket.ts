@@ -29,6 +29,7 @@ export interface SpaceJoinedMessage extends WebSocketMessage {
     userId: string;
     spawn: Coordinate;
     users: SpaceUser[];
+    role: string;
   };
 }
 
@@ -51,6 +52,7 @@ export interface MovementMessage extends WebSocketMessage {
     userId: string;
     x: number;
     y: number;
+    role: string;
   };
 }
 

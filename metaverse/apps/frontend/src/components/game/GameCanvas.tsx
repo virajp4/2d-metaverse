@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SpaceUser } from "@repo/types";
 
 interface GameCanvasProps {
@@ -17,10 +17,31 @@ export default function GameCanvas({
   cellSize,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [icons, setIcons] = useState<{
+    teacher: HTMLImageElement | null;
+    student: HTMLImageElement | null;
+  }>({ teacher: null, student: null });
+
+  // Load icons when component mounts
+  useEffect(() => {
+    // Teacher icon
+    const teacherIcon = new Image();
+    teacherIcon.src = "/icons/teacher.svg";
+    teacherIcon.onload = () => {
+      setIcons((prev) => ({ ...prev, teacher: teacherIcon }));
+    };
+
+    // Student icon
+    const studentIcon = new Image();
+    studentIcon.src = "/icons/student.svg";
+    studentIcon.onload = () => {
+      setIcons((prev) => ({ ...prev, student: studentIcon }));
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !currentUser) return;
+    if (!canvas || !currentUser || !icons.teacher || !icons.student) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -38,21 +59,21 @@ export default function GameCanvas({
       // Draw grid
       drawGrid(ctx, canvas.width, canvas.height);
 
-      // Draw other users in green
+      // Draw other users with role-based icons
       drawOtherUsers(ctx, currentState.users);
 
-      // Draw current user in red
+      // Draw current user with role-based icon and highlight
       drawCurrentUser(ctx, currentState.currentUser);
     });
 
     return () => cancelAnimationFrame(animationFrame);
-  }, [currentUser, users]);
+  }, [currentUser, users, icons]);
 
   function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number) {
     const cols = Math.floor(width / cellSize);
     const rows = Math.floor(height / cellSize);
 
-    ctx.strokeStyle = "#eee";
+    ctx.strokeStyle = "transparent";
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         ctx.strokeRect(i * cellSize, j * cellSize, cellSize, cellSize);
@@ -62,30 +83,42 @@ export default function GameCanvas({
 
   function drawOtherUsers(ctx: CanvasRenderingContext2D, users: SpaceUser[]) {
     users.forEach((user) => {
-      ctx.fillStyle = "#4CAF50"; // Green color for other users
-      ctx.beginPath();
-      ctx.arc(
-        user.x * cellSize + cellSize / 2,
-        user.y * cellSize + cellSize / 2,
-        cellSize / 2.5,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
+      const x = user.x * cellSize;
+      const y = user.y * cellSize;
+
+      // Draw the appropriate icon based on role
+      const isTeacher = user.role.toLowerCase() === "teacher";
+      const icon = isTeacher ? icons.teacher : icons.student;
+      if (icon) {
+        const iconSize = cellSize * 0.8;
+        ctx.drawImage(
+          icon,
+          x + (cellSize - iconSize) / 2,
+          y + (cellSize - iconSize) / 2,
+          iconSize,
+          iconSize
+        );
+      }
     });
   }
 
   function drawCurrentUser(ctx: CanvasRenderingContext2D, user: SpaceUser) {
-    ctx.fillStyle = "#FF0000"; // Red color for current user
-    ctx.beginPath();
-    ctx.arc(
-      user.x * cellSize + cellSize / 2,
-      user.y * cellSize + cellSize / 2,
-      cellSize / 2.5,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
+    const x = user.x * cellSize;
+    const y = user.y * cellSize;
+
+    // Draw the appropriate icon based on role
+    const isTeacher = user.role.toLowerCase() === "teacher";
+    const icon = isTeacher ? icons.teacher : icons.student;
+    if (icon) {
+      const iconSize = cellSize * 0.8;
+      ctx.drawImage(
+        icon,
+        x + (cellSize - iconSize) / 2,
+        y + (cellSize - iconSize) / 2,
+        iconSize,
+        iconSize
+      );
+    }
   }
 
   return (
