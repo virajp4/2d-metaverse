@@ -17,11 +17,15 @@ export default function GameCanvas({
   cellSize,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bgOffsetX = -50;
+  const bgOffsetY = 0;
+
   const [icons, setIcons] = useState<{
     teacher: HTMLImageElement | null;
     student: HTMLImageElement | null;
     bench: HTMLImageElement | null;
-  }>({ teacher: null, student: null, bench: null });
+    background: HTMLImageElement | null;
+  }>({ teacher: null, student: null, bench: null, background: null });
 
   useEffect(() => {
     const teacherIcon = new Image();
@@ -36,10 +40,10 @@ export default function GameCanvas({
       setIcons((prev) => ({ ...prev, student: studentIcon }));
     };
 
-    const benchIcon = new Image();
-    benchIcon.src = "/icons/bench.svg";
-    benchIcon.onload = () => {
-      setIcons((prev) => ({ ...prev, bench: benchIcon }));
+    const backgroundImage = new Image();
+    backgroundImage.src = "/icons/bg.png";
+    backgroundImage.onload = () => {
+      setIcons((prev) => ({ ...prev, background: backgroundImage }));
     };
   }, []);
 
@@ -58,6 +62,30 @@ export default function GameCanvas({
     const animationFrame = requestAnimationFrame(() => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Draw background first
+      if (icons.background) {
+        // Center the background image instead of stretching it
+        const bgRatio = icons.background.width / icons.background.height;
+        let drawWidth, drawHeight, drawX, drawY;
+
+        if (canvas.width / canvas.height > bgRatio) {
+          // Canvas is wider than image ratio
+          drawHeight = canvas.height;
+          drawWidth = drawHeight * bgRatio;
+          drawX = (canvas.width - drawWidth) / 2;
+          drawY = 0;
+        } else {
+          // Canvas is taller than image ratio
+          drawWidth = canvas.width;
+          drawHeight = drawWidth / bgRatio;
+          drawX = 0;
+          drawY = (canvas.height - drawHeight) / 2;
+        }
+        drawX += bgOffsetX;
+        drawY += bgOffsetY;
+        ctx.drawImage(icons.background, drawX, drawY, drawWidth, drawHeight);
+      }
+
       drawGrid(ctx, canvas.width, canvas.height);
       drawClassroom(ctx);
       drawOtherUsers(ctx, currentState.users);
@@ -65,7 +93,7 @@ export default function GameCanvas({
     });
 
     return () => cancelAnimationFrame(animationFrame);
-  }, [currentUser, users, icons]);
+  }, [currentUser, users, icons, bgOffsetX, bgOffsetY]);
 
   function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number) {
     const cols = Math.floor(width / cellSize);
