@@ -11,6 +11,7 @@ export interface Coordinate {
 
 export interface SpaceUser {
   userId: string;
+  username: string;
   x: number;
   y: number;
   role: string;

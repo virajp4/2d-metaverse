@@ -20,9 +20,8 @@ export default function GameCanvas({
   const [icons, setIcons] = useState<{
     teacher: HTMLImageElement | null;
     student: HTMLImageElement | null;
-    blackboard: HTMLImageElement | null;
     bench: HTMLImageElement | null;
-  }>({ teacher: null, student: null, blackboard: null, bench: null });
+  }>({ teacher: null, student: null, bench: null });
 
   useEffect(() => {
     const teacherIcon = new Image();
@@ -35,12 +34,6 @@ export default function GameCanvas({
     studentIcon.src = "/icons/student.svg";
     studentIcon.onload = () => {
       setIcons((prev) => ({ ...prev, student: studentIcon }));
-    };
-
-    const blackboardIcon = new Image();
-    blackboardIcon.src = "/icons/blackboard.svg";
-    blackboardIcon.onload = () => {
-      setIcons((prev) => ({ ...prev, blackboard: blackboardIcon }));
     };
 
     const benchIcon = new Image();
@@ -66,7 +59,7 @@ export default function GameCanvas({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       drawGrid(ctx, canvas.width, canvas.height);
-      drawClassroom(ctx, canvas.width);
+      drawClassroom(ctx);
       drawOtherUsers(ctx, currentState.users);
       drawCurrentUser(ctx, currentState.currentUser);
     });
@@ -86,18 +79,7 @@ export default function GameCanvas({
     }
   }
 
-  function drawClassroom(ctx: CanvasRenderingContext2D, width: number) {
-    const cols = Math.floor(width / cellSize);
-
-    if (icons.blackboard) {
-      const blackboardCells = 4;
-      const blackboardX = Math.floor((cols - blackboardCells) / 2) * cellSize;
-      const blackboardY = 0;
-      const blackboardWidth = blackboardCells * cellSize;
-      const blackboardHeight = cellSize;
-
-      ctx.drawImage(icons.blackboard, blackboardX, blackboardY, blackboardWidth, blackboardHeight);
-    }
+  function drawClassroom(ctx: CanvasRenderingContext2D) {
     if (icons.bench) {
       const benchRows = 3;
       const benchesPerRow = 4;

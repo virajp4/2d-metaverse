@@ -8,6 +8,8 @@ export enum MessageType {
   MOVEMENT = "movement",
   MOVEMENT_REJECTED = "movement-rejected",
   USER_LEFT = "user-left",
+  CHAT = "chat",
+  CHAT_MESSAGE = "chat-message",
 }
 
 export interface WebSocketMessage {
@@ -71,11 +73,29 @@ export interface UserLeftMessage extends WebSocketMessage {
   };
 }
 
+export interface ChatMessage extends WebSocketMessage {
+  type: MessageType.CHAT;
+  payload: {
+    message: string;
+  };
+}
+
+export interface ChatMessageBroadcast extends WebSocketMessage {
+  type: MessageType.CHAT_MESSAGE;
+  payload: {
+    userId: string;
+    message: string;
+    timestamp: number;
+    username: string;
+  };
+}
+
 export type OutgoingMessage =
   | SpaceJoinedMessage
   | UserJoinedMessage
   | MovementMessage
   | UserLeftMessage
-  | MovementRejectedMessage;
+  | MovementRejectedMessage
+  | ChatMessageBroadcast;
 
-export type IncomingMessage = JoinMessage | MoveMessage;
+export type IncomingMessage = JoinMessage | MoveMessage | ChatMessage;

@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { SpaceUser } from "@repo/types";
 import { useNavigate } from "react-router-dom";
+
+export interface ChatMessageDisplay {
+  userId: string;
+  message: string;
+  timestamp: number;
+}
+
 interface UseGameWebSocketProps {
   token: string | null;
   spaceId: string | undefined;
@@ -13,6 +20,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
   const wsRef = useRef<WebSocket | null>(null);
   const [currentUser, setCurrentUser] = useState<SpaceUser | null>(null);
   const [users, setUsers] = useState<Map<string, SpaceUser>>(new Map());
+  const [chatMessages, setChatMessages] = useState<ChatMessageDisplay[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,6 +75,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
           y: message.payload.spawn.y,
           userId: message.payload.userId,
           role: message.payload.role,
+          username: message.payload.username,
         });
 
         const initialUsers = new Map();
@@ -77,6 +86,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
               y: user.y,
               userId: user.userId,
               role: user.role,
+              username: user.username,
             });
           }
         });
@@ -92,6 +102,7 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
               y: message.payload.y,
               userId: message.payload.userId,
               role: message.payload.role,
+              username: message.payload.username,
             });
           }
           return newUsers;
@@ -136,6 +147,28 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
           return newUsers;
         });
         break;
+
+      case "chat-message":
+        if (message.payload.userId !== currentUser?.userId) {
+          setChatMessages((prev) => {
+            const messageExists = prev.some(
+              (msg) =>
+                msg.timestamp === message.payload.timestamp && msg.userId === message.payload.userId
+            );
+            if (!messageExists) {
+              return [
+                ...prev,
+                {
+                  userId: message.payload.userId,
+                  message: message.payload.message,
+                  timestamp: message.payload.timestamp,
+                },
+              ];
+            }
+            return prev;
+          });
+        }
+        break;
     }
   };
 
@@ -159,10 +192,24 @@ export default function useGameWebSocket({ token, spaceId, setConnected }: UseGa
     );
   };
 
+  const sendChatMessage = (message: string) => {
+    if (!wsRef.current || !currentUser) return;
+    wsRef.current.send(
+      JSON.stringify({
+        type: "chat",
+        payload: {
+          message,
+        },
+      })
+    );
+  };
+
   return {
     currentUser,
     users,
     handleMove,
     wsRef,
+    chatMessages,
+    sendChatMessage,
   };
 }

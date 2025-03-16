@@ -23,6 +23,7 @@ export class SpaceUser {
   private position: Coordinate;
   private ws: WebSocket;
   private role: string;
+  private username?: string;
 
   constructor(ws: WebSocket) {
     this.id = generateId(10);
@@ -44,11 +45,12 @@ export class SpaceUser {
       // Fetch user to get role
       const user = await client.user.findUnique({
         where: { id: decoded.userId },
-        select: { role: true },
+        select: { role: true, username: true },
       });
 
       // Set role appropriately - lowercase for consistent comparison
       if (user && user.role) {
+        this.username = user.username;
         this.role = user.role.toLowerCase();
       } else {
         this.role = "student"; // Default role should be lowercase for client comparison
@@ -65,6 +67,7 @@ export class SpaceUser {
         .getUsers(spaceId)
         .map((user: SpaceUser) => ({
           userId: user.userId!,
+          username: user.username!,
           x: user.getPosition().x,
           y: user.getPosition().y,
           role: user.role,
@@ -86,6 +89,7 @@ export class SpaceUser {
         type: MessageType.USER_JOINED,
         payload: {
           userId: this.userId!,
+          username: this.username!,
           x: this.position.x,
           y: this.position.y,
           role: this.role,
@@ -125,6 +129,20 @@ export class SpaceUser {
     });
   }
 
+  private handleChat(message: string) {
+    if (!this.spaceId || !this.userId) return;
+
+    this.broadcastToRoom({
+      type: MessageType.CHAT_MESSAGE,
+      payload: {
+        userId: this.userId,
+        username: this.username!,
+        message,
+        timestamp: Date.now(),
+      },
+    });
+  }
+
   private initHandlers() {
     this.ws.on("message", async (data) => {
       try {
@@ -138,6 +156,10 @@ export class SpaceUser {
 
           case "move":
             this.handleMove(message.payload.x!, message.payload.y!);
+            break;
+
+          case "chat":
+            this.handleChat(message.payload.message!);
             break;
         }
       } catch (e) {
